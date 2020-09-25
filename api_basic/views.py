@@ -13,68 +13,44 @@ from rest_framework import mixins
 
 # GET, PUT(UPDATE), POST(CREATE), DELETE
 
-# Generic Views And Mixins - [generics, mixins
+# API - Function Based View  [api_view, modelSerializers, Response, status]
 
-class GenericAPIView(generics.GenericAPIView, mixins.ListModelMixin, mixins.CreateModelMixin,mixins.DestroyModelMixin ,mixins.UpdateModelMixin, mixins.RetrieveModelMixin):
-    serializer_class = ArticleSerializers
-    queryset = Article.objects.all()
+@api_view(['GET', 'POST'])
+def article_list(request):
+    if request.method == 'GET':
+        article = Article.objects.all()
+        serializer = ArticleSerializers(article, many=True)
+        return Response(serializer.data)
+    else:
+        serializer = ArticleSerializers(data=request.data)
 
-    lookup_field = 'id'
-
-    def get(self, request, id=None):
-
-        if id:
-            return self.retrieve(request)
-        else:
-            return self.list(request)
-
-    def post(self, request):
-        return self.create(request)
-
-    def put(self, request, id=None):
-        return self.update(request, id)
-
-    def delete(self, request, id=None):
-        return self.destroy(request, id)
-#
-
-# class GenericDetailView(generics.GenericAPIView, mixins.UpdateModelMixin):
-#     def get_object(self, id):
-#         return Article.objects.get(id=id)
-#
-#     serializer_class = ArticleSerializers
-#     queryset = get_object()
-#
-#     def get(self, request):
-#         return self.list(request)
-#
-#     def post(self, request):
-#         return self.create(request)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@api_view(['GET', 'PUT', 'DELETE'])
+def article_detail(request, pk):
+    try:
+        article = Article.objects.get(id=pk)
+    except Article.DoesNotExist:
+        return HttpResponse(status=404)
 
+    if request.method == 'GET':
+        serializer = ArticleSerializers(article)
+        return Response(serializer.data)
 
+    elif request.method == 'PUT':
+        serializer = ArticleSerializers(article, request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    elif request.method == 'DELETE':
+        article.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 # Class Based View  -  [API View, status, api_view, Response, ModelSerializers]
 
@@ -119,48 +95,37 @@ class ArticleDetail(APIView):
         article.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+# Generic Views And Mixins - [generics, mixins
 
+class GenericAPIView(
+    generics.GenericAPIView,
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    mixins.DestroyModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.RetrieveModelMixin
+    ):
+    
+    serializer_class = ArticleSerializers
+    queryset = Article.objects.all()
 
+    lookup_field = 'id'
 
-# API - Function Based View  [api_view, modelSerializers, Response, status]
+    def get(self, request, id=None):
 
+        if id:
+            return self.retrieve(request)
+        else:
+            return self.list(request)
 
-@api_view(['GET', 'POST'])
-def article_list(request):
-    if request.method == 'GET':
-        article = Article.objects.all()
-        serializer = ArticleSerializers(article, many=True)
-        return Response(serializer.data)
-    else:
-        serializer = ArticleSerializers(data=request.data)
+    def post(self, request):
+        return self.create(request)
 
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def put(self, request, id=None):
+        return self.update(request, id)
 
-
-@api_view(['GET', 'PUT', 'DELETE'])
-def article_detail(request, pk):
-    try:
-        article = Article.objects.get(id=pk)
-    except Article.DoesNotExist:
-        return HttpResponse(status=404)
-
-    if request.method == 'GET':
-        serializer = ArticleSerializers(article)
-        return Response(serializer.data)
-
-    elif request.method == 'PUT':
-        serializer = ArticleSerializers(article, request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    elif request.method == 'DELETE':
-        article.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+    def delete(self, request, id=None):
+        return self.destroy(request, id)
 
 # Simple Basic...
 # @csrf_exempt

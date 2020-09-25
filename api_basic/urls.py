@@ -7,5 +7,4 @@ urlpatterns = [
     path('class/<int:id>/', views.ArticleDetail.as_view(), name='class_api_pk'),
     path('generic/', views.GenericAPIView.as_view(), name='generic_api'),
     path('generic/<int:id>/', views.GenericAPIView.as_view(), name='generic_api_pk')
-
 ]
